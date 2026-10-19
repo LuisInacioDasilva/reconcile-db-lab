@@ -55,6 +55,15 @@ test('reconciliação preserva idempotência, integridade e auditoria', async (t
     assert.equal(rows.reduce((sum, row) => sum + Number(row.received_events), 0), 5);
     assert.equal(rows.reduce((sum, row) => sum + Number(row.rejected_events), 0), 1);
   });
+
+  await t.test('integridade detecta alteração direta sem evento de auditoria', async () => {
+    const healthy = await db.query('SELECT count(*)::integer AS n FROM reconcile.order_integrity WHERE NOT consistent');
+    assert.equal(healthy.rows[0].n, 0);
+    await db.query("UPDATE reconcile.orders SET version = version + 1 WHERE external_id = 'WEB-1001'");
+    const drift = await db.query("SELECT * FROM reconcile.order_integrity WHERE external_id = 'WEB-1001'");
+    assert.equal(drift.rows[0].consistent, false);
+    assert.equal(drift.rows[0].expected_status, 'fulfilled');
+  });
 });
 
 test('migration tem rollback verificável em base descartável', async () => {
