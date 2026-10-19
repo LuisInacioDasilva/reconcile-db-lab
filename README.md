@@ -1,3 +1,7 @@
+<p align="center"><img src="./assets/hero.svg" alt="RECONCILE DB LAB: Quando duas fontes discordam, a trilha explica o porquê." width="960"></p>
+
+<p align="center"><a href="#rodar">Rodar</a> · <a href="#testes">Testes</a> · <a href="#deploy-e-rollback">Deploy e rollback</a></p>
+
 # Reconcile DB Lab
 
 Este projeto parte de uma dor recorrente em integrações: um sistema informa que enviou um evento, outro mostra um estado diferente e ninguém consegue reconstruir o caminho. O banco aqui é o centro da solução. Modelei a entrada, o estado consolidado e a trilha de decisão separadamente para que repetição, ordem errada e divergência não virem atualização silenciosa.
@@ -51,3 +55,4 @@ Em um PostgreSQL real, aplique `001_up.sql` e depois `002_up.sql` em transaçõe
 
 <p align="center"><a href="https://github.com/LuisInacioDasilva"><img src="https://avatars.githubusercontent.com/u/88007376?v=4" width="82" height="82" alt="Foto de Luis da Silva" style="border-radius:50%"></a></p>
 <p align="center"><strong>Desenvolvido por Luis da Silva</strong><br>Back-end, dados, integrações e automação em produção.</p>
+

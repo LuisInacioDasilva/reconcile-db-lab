@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="240" viewBox="0 0 960 240" role="img" aria-labelledby="title desc">
+  <title id="title">RECONCILE DB LAB</title><desc id="desc">Quando duas fontes discordam, a trilha explica o porquê.</desc>
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#091522"/><stop offset="1" stop-color="#17283c"/></linearGradient><linearGradient id="accent"><stop stop-color="#f8b86d"/><stop offset="1" stop-color="#f97462"/></linearGradient><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#60728c" stroke-width=".5" opacity=".25"/></pattern>
+  <style>.scan{animation:scan 5s ease-in-out infinite alternate}.beacon{animation:blink 2s ease-in-out infinite}@keyframes scan{to{transform:translateY(165px)}}@keyframes blink{50%{opacity:.2}}@media(prefers-reduced-motion:reduce){.scan,.beacon{animation:none}}</style></defs>
+  <rect width="960" height="240" rx="18" fill="url(#bg)"/><rect width="960" height="240" rx="18" fill="url(#grid)"/><rect x="22" y="18" width="916" height="204" rx="14" fill="none" stroke="#f8b86d" stroke-opacity=".42"/>
+  <path class="scan" d="M32 28h896" stroke="url(#accent)" stroke-opacity=".24"/>
+  <text x="48" y="55" fill="#f8b86d" font-family="monospace" font-size="12" letter-spacing="3">DATA / INTEGRITY / EVIDENCE</text>
+  <text x="48" y="120" fill="#f4fbff" font-family="Arial,sans-serif" font-weight="800" font-size="41">RECONCILE DB LAB</text>
+  <text x="50" y="151" fill="#bdcad9" font-family="Arial,sans-serif" font-size="15">Quando duas fontes discordam, a trilha explica o porquê.</text>
+  <g transform="translate(50 178)" font-family="monospace" font-size="11" fill="#f8b86d">
+  <rect x="0" width="110" height="27" rx="6" fill="#172b36" stroke="#f8b86d" stroke-opacity=".5"/><text x="12" y="18">POSTGRESQL</text><rect x="119" width="110" height="27" rx="6" fill="#172b36" stroke="#f8b86d" stroke-opacity=".5"/><text x="131" y="18">EVENT INBOX</text><rect x="238" width="110" height="27" rx="6" fill="#172b36" stroke="#f8b86d" stroke-opacity=".5"/><text x="250" y="18">AUDITORIA</text></g>
+  <g fill="none" stroke="#d08569" stroke-width="2"><path d="M570 56h100l48 35h136"/><path d="M570 122h100l48-31"/><path d="M718 91v54h136"/></g><g fill="#182332" stroke="#e5a465"><rect x="554" y="39" width="94" height="34" rx="7"/><rect x="554" y="105" width="94" height="34" rx="7"/><rect x="807" y="74" width="92" height="34" rx="7"/><rect x="807" y="128" width="92" height="34" rx="7"/></g><g fill="#ffe9d1" font-family="monospace" font-size="11" text-anchor="middle"><text x="601" y="61">FONTE A</text><text x="601" y="127">FONTE B</text><text x="853" y="96">COMPARE</text><text x="853" y="150">EVIDENCE</text></g><circle class="beacon" cx="720" cy="91" r="5" fill="#ffbb70"/>
+</svg>
+
