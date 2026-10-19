@@ -1,0 +1,17 @@
+{
+  "name": "reconcile-db-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "test": "node --test",
+    "demo": "node src/demo.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
