@@ -8,6 +8,7 @@ const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (ch) => ({
 const db = await createDatabase({ seed: true });
 const sources = (await db.query('SELECT * FROM reconcile.source_health ORDER BY source')).rows;
 const orders = (await db.query('SELECT * FROM reconcile.order_snapshot ORDER BY source, external_id')).rows;
+const variances = (await db.query('SELECT * FROM reconcile.counterpart_variances ORDER BY source, order_external_id')).rows;
 const events = (await db.query(`
   SELECT s.code AS source, e.external_event_id, e.event_type, t.accepted, t.reason
   FROM reconcile.inbox_events e
@@ -31,7 +32,7 @@ const html = `<!doctype html>
     *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 90% 0,#123647 0,transparent 34%),#090f1d}
     main{max-width:1200px;margin:auto;padding:48px 24px 80px}.eyebrow{color:#52ead1;font-size:12px;letter-spacing:.17em;font-weight:800}
     h1{font-size:clamp(36px,5vw,60px);line-height:1.05;margin:20px 0 12px;letter-spacing:-.05em}p{color:#a4b6ce;max-width:650px;line-height:1.6}
-    .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:34px 0}.stat,.panel{background:#111c2e;border:1px solid #26405a;border-radius:16px}
+    .stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;margin:34px 0}.stat,.panel{background:#111c2e;border:1px solid #26405a;border-radius:16px}
     .stat{padding:22px}.stat span{display:block;color:#8ca6c1;font-size:12px;text-transform:uppercase;letter-spacing:.12em}.stat strong{font-size:36px;display:block;margin-top:10px}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{padding:24px;overflow:auto;margin-bottom:18px}.wide{grid-column:1/-1}
     h2{margin:0 0 18px;font-size:19px}table{border-collapse:collapse;width:100%;min-width:530px}th{text-align:left;color:#7e9bb8;text-transform:uppercase;font-size:11px;letter-spacing:.08em}
@@ -50,10 +51,14 @@ const html = `<!doctype html>
     <div class="stat"><span>Eventos recebidos</span><strong>${total('received_events')}</strong></div>
     <div class="stat"><span>Aplicados</span><strong>${total('applied_events')}</strong></div>
     <div class="stat"><span>Rejeitados</span><strong>${total('rejected_events')}</strong></div>
+    <div class="stat"><span>Divergências</span><strong>${variances.filter((v) => v.finding !== 'matched').length}</strong></div>
   </section>
   <div class="grid">
     <section class="panel wide"><h2>Pedidos reconciliados</h2><table><thead><tr><th>Origem</th><th>ID externo</th><th>Cliente</th><th>Valor</th><th>Status</th><th>Versão</th><th>Rejeições</th></tr></thead><tbody>
       ${orders.map((o) => `<tr>${cell(o.source)}${cell(o.external_id)}${cell(o.customer_name)}${cell(currency.format(Number(o.amount_cents) / 100))}<td>${status(o.status)}</td>${cell(o.version)}${cell(o.rejected_transitions)}</tr>`).join('')}
+    </tbody></table></section>
+    <section class="panel wide"><h2>Conferência com a contraparte</h2><table><thead><tr><th>Origem</th><th>Pedido</th><th>Local</th><th>Externo</th><th>Valor local</th><th>Valor externo</th><th>Achado</th></tr></thead><tbody>
+      ${variances.map((v) => `<tr>${cell(v.source)}${cell(v.order_external_id)}${cell(v.local_status ?? '—')}${cell(v.observed_status)}${cell(v.local_amount_cents === null ? '—' : currency.format(Number(v.local_amount_cents) / 100))}${cell(currency.format(Number(v.observed_amount_cents) / 100))}<td>${status(v.finding)}</td></tr>`).join('')}
     </tbody></table></section>
     <section class="panel"><h2>Saúde por origem</h2><table><thead><tr><th>Sistema</th><th>Pedidos</th><th>Eventos</th><th>Rejeições</th></tr></thead><tbody>
       ${sources.map((s) => `<tr>${cell(s.source)}${cell(s.orders)}${cell(s.received_events)}${cell(s.rejected_events)}</tr>`).join('')}
@@ -62,7 +67,7 @@ const html = `<!doctype html>
       ${events.map((e) => `<tr>${cell(e.source)}${cell(e.external_event_id)}${cell(e.event_type)}<td>${status(e.accepted ? 'applied' : 'rejected')}</td></tr>`).join('')}
     </tbody></table></section>
   </div>
-  <footer>Dados sintéticos. Relatório estático gerado localmente; nenhuma credencial ou banco externo é necessário.<div style="display:flex;align-items:center;gap:12px;margin-top:22px;padding-top:19px;border-top:1px solid #26405a"><img src="https://avatars.githubusercontent.com/u/88007376?v=4" alt="Foto de Luis da Silva" width="44" height="44" style="border-radius:50%;object-fit:cover"><span>Desenvolvido por <a href="https://github.com/LuisInacioDasilva" style="color:#80e8ff">Luis da Silva</a> · Back-end e engenharia de dados.</span></div></footer>
+  <footer>Dados sintéticos. A divergência nunca é apagada por uma revisão: um snapshot novo substitui o anterior apenas na visão de situação atual. Relatório estático gerado localmente; nenhuma credencial ou banco externo é necessário.<div style="display:flex;align-items:center;gap:12px;margin-top:22px;padding-top:19px;border-top:1px solid #26405a"><img src="https://avatars.githubusercontent.com/u/88007376?v=4" alt="Foto de Luis da Silva" width="44" height="44" style="border-radius:50%;object-fit:cover"><span>Desenvolvido por <a href="https://github.com/LuisInacioDasilva" style="color:#80e8ff">Luis da Silva</a> · Back-end e engenharia de dados.</span></div></footer>
 </main></body></html>`;
 
 await mkdir(new URL('../dist/', import.meta.url), { recursive: true });

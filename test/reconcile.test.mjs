@@ -12,6 +12,8 @@ test('reconciliação preserva idempotência, integridade e auditoria', async (t
     assert.equal(rows[0].n, 5);
     const orders = await db.query('SELECT count(*)::integer AS n FROM reconcile.orders');
     assert.equal(orders.rows[0].n, 4);
+    const snapshots = await db.query('SELECT count(*)::integer AS n FROM reconcile.counterpart_snapshots');
+    assert.equal(snapshots.rows[0].n, 4);
   });
 
   await t.test('mesmo ID e mesmo payload é replay sem nova transição', async () => {
@@ -64,6 +66,44 @@ test('reconciliação preserva idempotência, integridade e auditoria', async (t
     assert.equal(drift.rows[0].consistent, false);
     assert.equal(drift.rows[0].expected_status, 'fulfilled');
   });
+});
+
+test('contraparte externa gera achados sem apagar evidência anterior', async () => {
+  const db = await createDatabase({ seed: true });
+  try {
+    const initial = await db.query('SELECT order_external_id, finding FROM reconcile.counterpart_variances ORDER BY order_external_id');
+    assert.deepEqual(initial.rows.map(({ order_external_id, finding }) => [order_external_id, finding]), [
+      ['ERP-2001', 'status_mismatch'],
+      ['ERP-2099', 'missing_local'],
+      ['WEB-1001', 'matched'],
+      ['WEB-1002', 'amount_mismatch'],
+    ]);
+
+    await db.query(`INSERT INTO reconcile.counterpart_snapshots
+      (source_id, snapshot_id, order_external_id, observed_status, observed_amount_cents, captured_at)
+      SELECT id, 'snap-web-1002-corrected', 'WEB-1002', 'cancelled', 24800, now() + interval '1 minute'
+      FROM reconcile.sources WHERE code = 'storefront'`);
+    const corrected = await db.query(`SELECT finding, snapshot_id FROM reconcile.counterpart_variances
+      WHERE order_external_id = 'WEB-1002'`);
+    assert.equal(corrected.rows[0].finding, 'matched');
+    assert.equal(corrected.rows[0].snapshot_id, 'snap-web-1002-corrected');
+
+    await db.query(`INSERT INTO reconcile.variance_reviews (snapshot_id, actor, decision, reason)
+      SELECT id, 'operador-teste', 'investigating', 'Conferir fonte externa'
+      FROM reconcile.counterpart_snapshots WHERE snapshot_id = 'snap-erp-2001'`);
+    const reviewed = await db.query(`SELECT review_actor, review_decision FROM reconcile.counterpart_variances
+      WHERE order_external_id = 'ERP-2001'`);
+    assert.equal(reviewed.rows[0].review_actor, 'operador-teste');
+    assert.equal(reviewed.rows[0].review_decision, 'investigating');
+
+    await assert.rejects(db.query('DELETE FROM reconcile.variance_reviews'), /append-only/);
+    await assert.rejects(db.query('UPDATE reconcile.counterpart_snapshots SET observed_amount_cents = 1'), /append-only/);
+    await assert.rejects(db.query(`INSERT INTO reconcile.counterpart_snapshots
+      (source_id, snapshot_id, order_external_id, observed_status, observed_amount_cents)
+      VALUES (1, 'snap-web-1001', 'WEB-1001', 'fulfilled', 1)`), /unique constraint/);
+  } finally {
+    await db.close();
+  }
 });
 
 test('migration tem rollback verificável em base descartável', async () => {
