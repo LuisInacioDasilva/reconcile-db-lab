@@ -147,16 +147,25 @@ END;
 $$;
 
 CREATE VIEW reconcile.source_health AS
+WITH order_counts AS (
+    SELECT source_id, count(*) AS orders
+    FROM reconcile.orders GROUP BY source_id
+), event_counts AS (
+    SELECT e.source_id, count(*) AS received_events,
+           count(t.id) FILTER (WHERE t.accepted) AS applied_events,
+           count(t.id) FILTER (WHERE NOT t.accepted) AS rejected_events
+    FROM reconcile.inbox_events e
+    LEFT JOIN reconcile.transitions t ON t.inbox_event_id = e.id
+    GROUP BY e.source_id
+)
 SELECT s.code AS source,
-       count(DISTINCT o.id) AS orders,
-       count(DISTINCT e.id) AS received_events,
-       count(DISTINCT t.id) FILTER (WHERE t.accepted) AS applied_events,
-       count(DISTINCT t.id) FILTER (WHERE NOT t.accepted) AS rejected_events
+       coalesce(o.orders, 0) AS orders,
+       coalesce(e.received_events, 0) AS received_events,
+       coalesce(e.applied_events, 0) AS applied_events,
+       coalesce(e.rejected_events, 0) AS rejected_events
 FROM reconcile.sources s
-LEFT JOIN reconcile.orders o ON o.source_id = s.id
-LEFT JOIN reconcile.inbox_events e ON e.source_id = s.id
-LEFT JOIN reconcile.transitions t ON t.inbox_event_id = e.id
-GROUP BY s.id, s.code;
+LEFT JOIN order_counts o ON o.source_id = s.id
+LEFT JOIN event_counts e ON e.source_id = s.id;
 
 CREATE VIEW reconcile.order_snapshot AS
 SELECT s.code AS source, o.external_id, o.customer_name, o.amount_cents,
@@ -167,3 +176,19 @@ FROM reconcile.orders o
 JOIN reconcile.sources s ON s.id = o.source_id
 LEFT JOIN reconcile.transitions t ON t.order_id = o.id
 GROUP BY o.id, s.code;
+
+CREATE VIEW reconcile.order_integrity AS
+WITH decisions AS (
+    SELECT order_id,
+           count(*) FILTER (WHERE accepted) AS accepted_count,
+           (array_agg(requested_status ORDER BY id DESC) FILTER (WHERE accepted))[1] AS latest_accepted_status
+    FROM reconcile.transitions GROUP BY order_id
+)
+SELECT s.code AS source, o.external_id, o.status, o.version,
+       1 + coalesce(d.accepted_count, 0) AS expected_version,
+       coalesce(d.latest_accepted_status, 'pending') AS expected_status,
+       o.version = 1 + coalesce(d.accepted_count, 0)
+           AND o.status = coalesce(d.latest_accepted_status, 'pending') AS consistent
+FROM reconcile.orders o
+JOIN reconcile.sources s ON s.id = o.source_id
+LEFT JOIN decisions d ON d.order_id = o.id;

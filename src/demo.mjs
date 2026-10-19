@@ -62,7 +62,7 @@ const html = `<!doctype html>
       ${events.map((e) => `<tr>${cell(e.source)}${cell(e.external_event_id)}${cell(e.event_type)}<td>${status(e.accepted ? 'applied' : 'rejected')}</td></tr>`).join('')}
     </tbody></table></section>
   </div>
-  <footer>Dados sintéticos. Relatório estático gerado localmente; nenhuma credencial ou banco externo é necessário.</footer>
+  <footer>Dados sintéticos. Relatório estático gerado localmente; nenhuma credencial ou banco externo é necessário.<div style="display:flex;align-items:center;gap:12px;margin-top:22px;padding-top:19px;border-top:1px solid #26405a"><img src="https://avatars.githubusercontent.com/u/88007376?v=4" alt="Foto de Luis da Silva" width="44" height="44" style="border-radius:50%;object-fit:cover"><span>Desenvolvido por <a href="https://github.com/LuisInacioDasilva" style="color:#80e8ff">Luis da Silva</a> · Back-end e engenharia de dados.</span></div></footer>
 </main></body></html>`;
 
 await mkdir(new URL('../dist/', import.meta.url), { recursive: true });
